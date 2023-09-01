@@ -20,6 +20,10 @@ app.listen(3000, () => {
     console.log('Servidor rodando na porta 3000');
 });
 
+// Rotas
+const apiRouter = require('./routes/apiRouter')
+app.use ('/api', apiRouter)
+
 TODO: // Criar página 404 e redirecionar para ela
 app.use((req, res) => {
     res.status(404).send('404 - Página não encontrada');
