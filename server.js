@@ -25,7 +25,7 @@ const apiProdutos = require('./routes/apiProdutos')
 app.use ('/api', apiProdutos)
 // Rotas
 const apiPessoas = require('./routes/apiPessoas')
-app.use ('/api', apiProdutos)
+app.use ('/api', apiPessoas)
 
 TODO: // Criar página 404 e redirecionar para ela
 app.use((req, res) => {
