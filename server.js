@@ -23,7 +23,6 @@ app.listen(3000, () => {
 // Rotas
 const apiProdutos = require('./routes/apiProdutos')
 app.use ('/api', apiProdutos)
-// Rotas
 const apiPessoas = require('./routes/apiPessoas')
 app.use ('/api', apiPessoas)
 
