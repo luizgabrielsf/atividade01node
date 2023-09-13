@@ -1,79 +1,108 @@
 const express = require('express')
 
+const knex = require('knex')({
+    client: 'pg',
+    connection: {
+        connectionString: process.env.DB_URL,
+        ssl: { require: false, rejectUnauthorized: false }
+    }
+});
+
+
 let apiRouter = express.Router()
 const endpoint = '/'
 
-const lista_produtos = {
-    produtos: [
-        { id: 1, descricao: "Arroz parboilizado 5Kg", valor: 25.00, marca: "Tio João" },
-        { id: 2, descricao: "Maionese 250gr", valor: 7.20, marca: "Helmans" },
-        { id: 3, descricao: "Iogurte Natural 200ml", valor: 2.50, marca: "Itambé" },
-        { id: 4, descricao: "Batata Maior Palha 300gr", valor: 15.20, marca: "Chipps" },
-        { id: 5, descricao: "Nescau 400gr", valor: 8.00, marca: "Nestlé" },
-    ]
-}
+// Incluir uma pessoa
+apiRouter.post(endpoint + 'pessoas', function (req, res) {
+    const pessoa = req.body;
 
-// Incluir um produto
-TODO: // Lógica de criação de ID automático (AUTO INCREMENT no banco de dados)
-apiRouter.post(endpoint + 'produtos', function (req, res) {
-
-    TODO: // Validar lógica de checagem do body
-    if (req.body != null) {	
-        const produto = req.body
-        const idx = lista_produtos.produtos.findIndex(item => item.id == produto.id)
-        if (idx != -1) {
-            res.status(400).json({ erro: "Produto já cadastrado" })
-        }
-        else {
-            lista_produtos.produtos.push(produto)
-            res.status(200).json(produto)
-        }
+    if (!pessoa.nome || !pessoa.idade || !pessoa.cidade) {
+        return res.status(400).json({ error: 'Todos os campos (nome, idade e cidade) são obrigatórios.' });
     }
+
+    if (typeof pessoa.idade !== 'number' || pessoa.idade <= 0) {
+        return res.status(400).json({ error: 'A idade deve ser um número inteiro.' });
+    }
+
+    knex('pessoas')
+        .insert(pessoa)
+        .then(ret => {
+            res.status(201).json({ success: 'Pessoa inserida com sucesso.' });
+        })
+        .catch(err => {
+            res.status(500).json({ error: 'Ocorreu um erro ao inserir a pessoa.' });
+        });
+});
+
+// Obter a lista de pessoas
+apiRouter.get(endpoint + 'pessoas', function (req, res) {
+    knex('pessoas').select().then(ret => {
+        res.status(200).json(ret)
+    }).catch(err => {
+        res.status(400).json(err)
+    })
 })
 
-// Obter a lista de produtos
-apiRouter.get(endpoint + 'produtos', function (req, res) {
-    res.status(200).json(lista_produtos)
-})
-
-// Obter um produto específico
-apiRouter.get(endpoint + 'produtos/:id', function (req, res) {
+// Obter uma pessoa específico
+apiRouter.get(endpoint + 'pessoas/:id', function (req, res) {
     const id = req.params.id;
-    const idx = lista_produtos.produtos.findIndex(item => item.id == id)
-    if (idx == -1) {
-        res.status(404).json({ erro: "Produto não encontrado" })
-    }
-    else {
-        res.status(200).json(lista_produtos.produtos[idx])
-    }
+    knex('pessoas')
+        .select('nome', 'idade', 'cidade')
+        .where('id', id)
+        .then(ret => {
+            if (ret.length == 0) {
+                res.status(404).json({ erro: "Pessoa não encontrado" })
+            }
+            else {
+                res.status(200).json(ret[0])
+            }
+        }).catch(err => {
+            res.status(400).json(err)
+        })
 })
 
-// Alterar um produto
-apiRouter.put(endpoint + 'produtos/:id', function (req, res) {
+// Alterar uma pessoa
+apiRouter.put(endpoint + 'pessoas/:id', function (req, res) {
     const id = req.params.id;
-    const produto = req.body
-    const idx = lista_produtos.produtos.findIndex(item => item.id == id)
-    if (idx == -1) {
-        res.status(404).json({ erro: "Produto não encontrado, crie o produto antes" })
+    const pessoaAtualizada = req.body;
+
+    if (!Object.keys(pessoaAtualizada).length) {
+        return res.status(400).json({ erro: "Nenhum campo para atualização foi fornecido" });
     }
-    else {
-        lista_produtos.produtos[idx] = produto
-        res.status(200).json(produto)
-    }
-})
+
+    knex('pessoas')
+        .where('id', id)
+        .update(pessoaAtualizada)
+        .then(ret => {
+            if (ret == 0) {
+                res.status(404).json({ erro: "Pessoa não encontrado" });
+            } else {
+                res.status(200).json({ msg: "Pessoa alterado com sucesso" });
+            }
+        })
+        .catch(err => {
+            res.status(400).json(err);
+        });
+});
 
 
-// Excluir um produto
-apiRouter.delete(endpoint + 'produtos/:id', function (req, res) {
+// Excluir uma pessoa
+apiRouter.delete(endpoint + 'pessoas/:id', function (req, res) {
     const id = req.params.id;
-    const idx = lista_produtos.produtos.findIndex(item => item.id == id)
-    if (idx == -1) {
-        res.status(404).json({ erro: "Produto não encontrado" })
-    }
-    else {
-        lista_produtos.produtos.splice(idx, 1)
-        res.status(200).json({ msg: "Produto excluído com sucesso" })
-    }
+
+    knex('pessoas')
+        .where('id', id)
+        .del()
+        .then(ret => {
+            if (ret == 0) {
+                res.status(404).json({ erro: "Pessoa não encontrado" });
+            } else {
+                res.status(200).json({ msg: "Pessoa excluída com sucesso" });
+            }
+        })
+        .catch(err => {
+            res.status(400).json(err);
+        });
 })
 
 module.exports = apiRouter
