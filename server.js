@@ -21,7 +21,10 @@ app.listen(3000, () => {
 });
 
 // Rotas
-const apiRouter = require('./routes/apiRouter')
+const apiProdutos = require('./routes/apiProdutos')
+app.use ('/api', apiRouter)
+// Rotas
+const apiPessoas = require('./routes/apiPessoas')
 app.use ('/api', apiRouter)
 
 TODO: // Criar página 404 e redirecionar para ela
